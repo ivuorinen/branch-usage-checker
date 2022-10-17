@@ -1,7 +1,7 @@
 <?php
 
-test('inspire command', function () {
-    $this->artisan('inspire')
+test('check command', function () {
+    $this->artisan('check ivuorinen branch-usage-checker')
       // ->expectsOutput('')
          ->assertExitCode(0);
 });
