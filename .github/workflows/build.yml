@@ -36,7 +36,7 @@ jobs:
           run: cp application application.phar
 
       -   name: Build PHAR
-          run: composer build -- --build-version
+          run: php application app:build branch-usage-checker --build-version
 
       # Smoke test
       -   name: Ensure the PHAR works
