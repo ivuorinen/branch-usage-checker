@@ -32,10 +32,11 @@ jobs:
       -   name: Install Composer dependencies
           uses: ramsey/composer-install@v2
 
+      -   name: Copy application to phar
+          run: cp application application.phar
+
       -   name: Build PHAR
-          run: |
-            cp application application.phar
-            composer build -- --build-version
+          run: composer build -- --build-version
 
       # Smoke test
       -   name: Ensure the PHAR works
