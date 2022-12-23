@@ -70,7 +70,10 @@
         "post-autoload-dump": [
             "composer normalize"
         ],
-        "build": "php branch-usage-checker app:build branch-usage-checker",
-        "x": "@php branch-usage-checker"
+        "build": [
+            "cp application application.phar",
+            "@php application app:build branch-usage-checker"
+        ],
+        "x": "@php builds/branch-usage-checker"
     }
 }

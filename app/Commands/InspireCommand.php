@@ -4,6 +4,7 @@ namespace App\Commands;
 
 use Illuminate\Console\Scheduling\Schedule;
 use LaravelZero\Framework\Commands\Command;
+
 use function Termwind\{render};
 
 class InspireCommand extends Command
@@ -29,20 +30,23 @@ class InspireCommand extends Command
      */
     public function handle()
     {
-        render(<<<'HTML'
+        render(
+            <<<'HTML'
             <div class="py-1 ml-2">
                 <div class="px-1 bg-blue-300 text-black">Laravel Zero</div>
                 <em class="ml-1">
                   Simplicity is the ultimate sophistication.
                 </em>
             </div>
-        HTML);
+        HTML
+        );
     }
 
     /**
      * Define the command's schedule.
      *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
+     * @param \Illuminate\Console\Scheduling\Schedule $schedule
+     *
      * @return void
      */
     public function schedule(Schedule $schedule)

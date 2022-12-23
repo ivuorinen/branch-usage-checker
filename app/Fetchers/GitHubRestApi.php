@@ -4,9 +4,11 @@ namespace App\Fetchers;
 
 use Illuminate\Support\Facades\Http;
 
-class GitHubRestApi {
-    public static function getBranches( string $vendor, string $package ) : array {
-        $pages = self::downloader( $vendor, $package );
+class GitHubRestApi
+{
+    public static function getBranches(string $vendor, string $package): array
+    {
+        $pages = self::downloader($vendor, $package);
         $pages = \collect($pages)
             ->flatten(1)
             ->toArray();
@@ -14,7 +16,8 @@ class GitHubRestApi {
         return $pages;
     }
 
-    public static function downloader( $vendor, $package ) : array {
+    public static function downloader($vendor, $package): array
+    {
         $responses = [];
 
         $continue = true;
@@ -25,15 +28,15 @@ class GitHubRestApi {
             $package
         );
 
-        while ( $continue ) {
-            $response = Http::get( $gh_api . '&page=' . $page );
+        while ($continue) {
+            $response = Http::get($gh_api . '&page=' . $page);
 
-            if ( empty( $response ) ) {
+            if (empty($response)) {
                 $continue = false;
             }
 
-            $responses[ $page ] = $response;
-            $page ++;
+            $responses[$page] = $response;
+            $page++;
         }
 
         return $responses;

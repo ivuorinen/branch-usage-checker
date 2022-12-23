@@ -4,7 +4,8 @@ namespace App\Dto;
 
 use Spatie\DataTransferObject\Attributes\MapFrom;
 
-class PackagistApiPackagePayload extends \Spatie\DataTransferObject\DataTransferObject {
+class PackagistApiPackagePayload extends \Spatie\DataTransferObject\DataTransferObject
+{
     #[MapFrom('package.name')]
     public string $name = '';
     #[MapFrom('package.description')]
