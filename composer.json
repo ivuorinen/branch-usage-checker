@@ -33,7 +33,7 @@
     "ergebnis/composer-normalize": "^2.23",
     "laravel-zero/framework": "^10.0",
     "mockery/mockery": "^1.4.4",
-    "pestphp/pest": "^1.21.1",
+    "pestphp/pest": "^2",
     "roave/security-advisories": "dev-latest"
   },
   "minimum-stability": "dev",
