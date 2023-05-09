@@ -3,7 +3,9 @@
 </h1>
 
 <p style="text-align:center">
-  <a href="https://packagist.org/packages/ivuorinen/branch-usage-checker"><img src="https://img.shields.io/packagist/v/ivuorinen/branch-usage-checker.svg?label=stable" alt="Latest Stable Version"></a>
+    <a href="https://packagist.org/packages/ivuorinen/branch-usage-checker">
+        <img src="https://img.shields.io/packagist/v/ivuorinen/branch-usage-checker.svg?label=stable" alt="Latest Stable Version">
+    </a>
   <a href="https://packagist.org/packages/ivuorinen/branch-usage-checker"><img src="https://img.shields.io/packagist/l/ivuorinen/branch-usage-checker.svg" alt="License"></a>
 </p>
 
@@ -16,7 +18,7 @@
     public GitHub Branches and Packagist branch
     download statistics to determine are branches
     safe to delete.
-</p>   
+</p>
 
 ## License
 

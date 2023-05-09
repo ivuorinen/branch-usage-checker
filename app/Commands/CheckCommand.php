@@ -46,7 +46,7 @@ class CheckCommand extends Command
             $versions = collect($pkg->versions ?? [])
                 ->keys()
                 // Filter actual versions out.
-                ->filter(fn($version) => \str_starts_with($version, 'dev-'))
+                ->filter(fn ($version) => \str_starts_with($version, 'dev-'))
                 ->sort();
 
             $this->totalBranches = $versions->count();
@@ -59,7 +59,7 @@ class CheckCommand extends Command
             );
 
             $statistics = collect($versions)
-                ->mapWithKeys(fn($branch) => $this->getStatistics($branch))
+                ->mapWithKeys(fn ($branch) => $this->getStatistics($branch))
                 ->toArray();
 
             $this->info('Downloaded statistics...');

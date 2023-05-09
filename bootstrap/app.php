@@ -1,6 +1,10 @@
 <?php
 
 /**
+ * Application bootstrap
+ */
+
+/**
  * Create The Application
  *
  * The first thing we will do is create a new Laravel application instance
@@ -8,7 +12,7 @@
  * the IoC container for the system binding all of the various parts.
  */
 $app = new LaravelZero\Framework\Application(
-    dirname( __DIR__ )
+    dirname(__DIR__)
 );
 
 /**
