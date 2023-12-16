@@ -73,7 +73,7 @@ class CheckCommand extends Command
         return 0;
     }
 
-    private function getStatistics($branch): array
+    private function getStatistics(string $branch): array
     {
         $payload = Http::get(
             sprintf(
