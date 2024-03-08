@@ -70,7 +70,7 @@ jobs:
           path: builds/
 
       - name: Upload box.phar
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: builds/branch-usage-checker
