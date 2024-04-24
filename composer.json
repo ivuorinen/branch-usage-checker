@@ -31,7 +31,7 @@
   },
   "require-dev": {
     "ergebnis/composer-normalize": "^2",
-    "laravel-zero/framework": "^10",
+    "laravel-zero/framework": "^11",
     "mockery/mockery": "^1",
     "pestphp/pest": "^2",
     "roave/security-advisories": "dev-latest"
