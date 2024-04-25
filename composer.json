@@ -24,14 +24,14 @@
   "require": {
     "php": "^8.2",
     "guzzlehttp/guzzle": "^7",
-    "illuminate/http": "^10",
+    "illuminate/http": "^11",
     "laravel-zero/phar-updater": "^1.2",
-    "nunomaduro/termwind": "^1",
+    "nunomaduro/termwind": "^2",
     "spatie/data-transfer-object": "^3.7"
   },
   "require-dev": {
     "ergebnis/composer-normalize": "^2",
-    "laravel-zero/framework": "^10",
+    "laravel-zero/framework": "^11",
     "mockery/mockery": "^1",
     "pestphp/pest": "^2",
     "roave/security-advisories": "dev-latest"
