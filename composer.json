@@ -72,7 +72,8 @@
     ],
     "build": [
       "cp application application.phar",
-      "@php application app:build branch-usage-checker"
+      "@php application app:build branch-usage-checker",
+      "rm application.phar"
     ],
     "test": "vendor/bin/pest",
     "x": "@php builds/branch-usage-checker"
