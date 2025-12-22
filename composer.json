@@ -24,7 +24,7 @@
   "require": {
     "php": "^8.4",
     "guzzlehttp/guzzle": "^7",
-    "illuminate/http": "^11",
+    "illuminate/http": "^12",
     "laravel-zero/phar-updater": "^1.2",
     "nunomaduro/termwind": "^2",
     "spatie/data-transfer-object": "^3.7"
