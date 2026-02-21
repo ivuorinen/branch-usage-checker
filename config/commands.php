@@ -53,7 +53,6 @@ return [
      * below a list of commands that you don't to see in your app.
      */
     'remove'  => [
-        \App\Commands\InspireCommand::class,
         Illuminate\Console\Scheduling\ScheduleRunCommand::class,
         Illuminate\Console\Scheduling\ScheduleListCommand::class,
         Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
