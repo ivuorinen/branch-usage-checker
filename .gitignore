@@ -1,6 +1,18 @@
+# OS files
+.DS_Store
+Thumbs.db
+
 /vendor
 /.idea
 /.vscode
 /.vagrant
+
+# PHPUnit
 .phpunit.result.cache
+.phpunit.cache
+
+# Build output
 /builds/branch-usage-checker
+
+# Claude Code local settings
+.claude/settings.local.json
