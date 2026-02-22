@@ -75,7 +75,18 @@
     ],
     "coverage": "php -d pcov.enabled=1 vendor/bin/pest --coverage",
     "format": "vendor/bin/phpcbf || true",
+    "format:md": "npx markdown-table-formatter *.md docs/**/*.md",
     "lint": "vendor/bin/phpcs",
+    "lint:all": [
+      "@lint",
+      "@lint:md",
+      "@lint:ec"
+    ],
+    "lint:ec": "npx editorconfig-checker",
+    "lint:md": [
+      "npx markdownlint-cli2 '**/*.md' '#vendor' '#node_modules'",
+      "npx markdown-table-formatter --check *.md docs/**/*.md"
+    ],
     "test": "vendor/bin/pest",
     "x": "@php builds/branch-usage-checker"
   }
