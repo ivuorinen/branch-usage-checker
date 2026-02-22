@@ -1,0 +1,27 @@
+{
+  "pre-commit": {
+    "enabled": true,
+    "actions": [
+      {
+        "action": "vendor/bin/phpcbf --standard=phpcs.xml {$STAGED_FILES|of-type:php}",
+        "config": {
+          "label": "Fix code style with PHPCBF"
+        }
+      },
+      {
+        "action": "vendor/bin/phpcs --standard=phpcs.xml {$STAGED_FILES|of-type:php}",
+        "config": {
+          "label": "Check code style with PHPCS"
+        }
+      }
+    ]
+  },
+  "pre-push": {
+    "enabled": false,
+    "actions": []
+  },
+  "commit-msg": {
+    "enabled": false,
+    "actions": []
+  }
+}
