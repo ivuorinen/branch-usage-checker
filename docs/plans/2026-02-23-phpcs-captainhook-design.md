@@ -25,6 +25,7 @@ with automatic pre-commit hooks managed by CaptainHook.
 ### phpcs.xml (existing, unchanged)
 
 PSR-12 with two exclusions:
+
 - `PSR12.Operators.OperatorSpacing`
 - `PSR1.Files.SideEffects.FoundWithSymbols`
 
