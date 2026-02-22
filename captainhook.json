@@ -13,6 +13,18 @@
         "config": {
           "label": "Check code style with PHPCS"
         }
+      },
+      {
+        "action": "npx editorconfig-checker {$STAGED_FILES}",
+        "config": {
+          "label": "Check EditorConfig compliance"
+        }
+      },
+      {
+        "action": "npx markdownlint-cli2 {$STAGED_FILES|of-type:md}",
+        "config": {
+          "label": "Lint Markdown files"
+        }
       }
     ]
   },
