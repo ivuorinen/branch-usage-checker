@@ -31,7 +31,8 @@
     "laravel-zero/framework": "^12",
     "mockery/mockery": "^1",
     "pestphp/pest": "^4",
-    "roave/security-advisories": "dev-latest"
+    "roave/security-advisories": "dev-latest",
+    "squizlabs/php_codesniffer": "^4.0"
   },
   "suggest": {
     "ext-pcov": "Required for code coverage reporting (composer coverage)"
