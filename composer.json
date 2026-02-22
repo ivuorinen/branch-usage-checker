@@ -71,6 +71,8 @@
       "rm -f application.phar || true"
     ],
     "coverage": "php -d pcov.enabled=1 vendor/bin/pest --coverage",
+    "format": "vendor/bin/phpcbf || true",
+    "lint": "vendor/bin/phpcs",
     "test": "vendor/bin/pest",
     "x": "@php builds/branch-usage-checker"
   }
