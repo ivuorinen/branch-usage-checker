@@ -19,7 +19,11 @@ application.
 - `composer build` — Build PHAR executable
   to `builds/branch-usage-checker`
 - `composer lint` — Check code style (PHPCS)
+- `composer lint:md` — Lint markdown files
+- `composer lint:ec` — Check EditorConfig compliance
+- `composer lint:all` — Run all linters
 - `composer format` — Auto-fix code style (PHPCBF)
+- `composer format:md` — Format markdown tables
 - `composer x` — Run the built PHAR
 - `vendor/bin/pest --filter "test name"` — Run a
   single test
