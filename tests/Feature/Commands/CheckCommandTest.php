@@ -86,10 +86,11 @@ test('check command with 500 shows server error', function () {
 });
 
 test('check command skips branch when stats fetch fails', function () {
+    $stats = 'packagist.org/packages/test-vendor/test-package/stats';
     Http::fake([
         'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        'packagist.org/packages/test-vendor/test-package/stats/dev-feature.json*' => Http::response([], 500),
-        'packagist.org/packages/test-vendor/test-package/stats/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
+        "{$stats}/dev-feature.json*" => Http::response([], 500),
+        "{$stats}/dev-main.json*" => Http::response(statsResponse([10, 20, 30])),
     ]);
 
     $this->artisan('check test-vendor test-package')
@@ -120,10 +121,11 @@ test('check command handles exception in try block', function () {
 });
 
 test('check command shows no suggestions when all branches have downloads', function () {
+    $stats = 'packagist.org/packages/test-vendor/test-package/stats';
     Http::fake([
         'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        'packagist.org/packages/test-vendor/test-package/stats/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
-        'packagist.org/packages/test-vendor/test-package/stats/dev-feature.json*' => Http::response(statsResponse([5, 10, 15])),
+        "{$stats}/dev-main.json*" => Http::response(statsResponse([10, 20, 30])),
+        "{$stats}/dev-feature.json*" => Http::response(statsResponse([5, 10, 15])),
     ]);
 
     $this->artisan('check test-vendor test-package')
@@ -132,10 +134,11 @@ test('check command shows no suggestions when all branches have downloads', func
 });
 
 test('check command suggests branches with zero downloads', function () {
+    $stats = 'packagist.org/packages/test-vendor/test-package/stats';
     Http::fake([
         'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        'packagist.org/packages/test-vendor/test-package/stats/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
-        'packagist.org/packages/test-vendor/test-package/stats/dev-feature.json*' => Http::response(statsResponse([0, 0, 0])),
+        "{$stats}/dev-main.json*" => Http::response(statsResponse([10, 20, 30])),
+        "{$stats}/dev-feature.json*" => Http::response(statsResponse([0, 0, 0])),
     ]);
 
     $this->artisan('check test-vendor test-package')

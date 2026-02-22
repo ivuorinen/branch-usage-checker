@@ -3,8 +3,8 @@
 namespace App\Commands;
 
 use App\Dto\PackagistApiPackagePayload;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\Pool;
-use Illuminate\Support\Facades\Http;
 use LaravelZero\Framework\Commands\Command;
 
 class CheckCommand extends Command
@@ -23,15 +23,22 @@ class CheckCommand extends Command
 
     private const NAME_PATTERN = '/^[a-z0-9]([_.\-]?[a-z0-9]+)*$/';
 
+    private HttpFactory $http;
+
     public function handle(): int
     {
+        $this->http = resolve(HttpFactory::class);
+
         $vendor  = (string) $this->argument('vendor');
         $package = $this->argument('package');
         $months  = (int) $this->argument('months');
 
         if (str_contains($vendor, '/')) {
             if ($package !== null) {
-                $this->error('Conflicting arguments: vendor/package format and separate package argument cannot be used together.');
+                $this->error(
+                    'Conflicting arguments: vendor/package format'
+                    . ' and separate package argument cannot be used together.'
+                );
                 return 1;
             }
             [$vendor, $package] = explode('/', $vendor, 2);
@@ -60,7 +67,7 @@ class CheckCommand extends Command
         $this->info('Checking: ' . sprintf('%s/%s', $this->vendor, $this->package));
         $this->info('Months: ' . $months);
 
-        $payload = Http::get(
+        $payload = $this->http->get(
             sprintf(
                 'https://packagist.org/packages/%s/%s.json',
                 $this->vendor,
@@ -71,9 +78,9 @@ class CheckCommand extends Command
         if ($payload->failed()) {
             if ($payload->status() === 404) {
                 $this->error("Package not found: {$this->vendor}/{$this->package}");
-            } else {
-                $this->error("Failed to fetch package metadata (HTTP {$payload->status()})");
+                return 1;
             }
+            $this->error("Failed to fetch package metadata (HTTP {$payload->status()})");
             return 1;
         }
 
@@ -98,9 +105,9 @@ class CheckCommand extends Command
                 )
             );
 
-            $responses = Http::pool(fn (Pool $pool) =>
-                $versions->map(fn ($branch) =>
-                    $pool->as($branch)->get($this->getStatsUrl($branch))
+            $responses = $this->http->pool(
+                fn (Pool $pool) => $versions->map(
+                    fn ($branch) => $pool->as($branch)->get($this->getStatsUrl($branch))
                 )->toArray()
             );
 
