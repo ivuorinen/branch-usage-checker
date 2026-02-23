@@ -29,61 +29,17 @@ class CheckCommand extends Command
     {
         $this->http = resolve(HttpFactory::class);
 
-        $vendor  = (string) $this->argument('vendor');
-        $package = $this->argument('package');
-        $months  = (int) $this->argument('months');
-
-        if (str_contains($vendor, '/')) {
-            if ($package !== null) {
-                $this->error(
-                    'Conflicting arguments: vendor/package format'
-                    . ' and separate package argument cannot be used together.'
-                );
-                return 1;
-            }
-            [$vendor, $package] = explode('/', $vendor, 2);
-        }
-
-        if ($package === null || $package === '') {
-            $this->error('Missing package name. Usage: check vendor/package or check vendor package');
+        $resolved = $this->resolveInput();
+        if ($resolved === null) {
             return 1;
         }
 
-        $package = (string) $package;
-
-        if (!preg_match(self::NAME_PATTERN, $vendor)) {
-            $this->error("Invalid vendor name: {$vendor}");
+        $payload = $this->fetchPackageMetadata();
+        if ($payload === null) {
             return 1;
         }
 
-        if (!preg_match(self::NAME_PATTERN, $package)) {
-            $this->error("Invalid package name: {$package}");
-            return 1;
-        }
-
-        $this->vendor  = $vendor;
-        $this->package = $package;
-
-        $this->info('Checking: ' . sprintf('%s/%s', $this->vendor, $this->package));
-        $this->info('Months: ' . $months);
-
-        $payload = $this->http->get(
-            sprintf(
-                'https://packagist.org/packages/%s/%s.json',
-                $this->vendor,
-                $this->package
-            )
-        );
-
-        if ($payload->failed()) {
-            if ($payload->status() === 404) {
-                $this->error("Package not found: {$this->vendor}/{$this->package}");
-                return 1;
-            }
-            $this->error("Failed to fetch package metadata (HTTP {$payload->status()})");
-            return 1;
-        }
-
+        $months = (int) $this->argument('months');
         $this->filter = now()->subMonths($months)->day(1)->toDateString();
 
         try {
@@ -132,15 +88,90 @@ class CheckCommand extends Command
 
             $this->info('Downloaded statistics...');
 
-            if (!$this->outputTable($statistics)) {
-                return 0;
+            if ($this->outputTable($statistics)) {
+                $this->outputSuggestions($statistics);
             }
-            $this->outputSuggestions($statistics);
         } catch (\Throwable $e) {
             $this->error($e->getMessage());
         }
 
         return 0;
+    }
+
+    /**
+     * Parse and validate vendor/package input arguments.
+     *
+     * @return array{string, string}|null Vendor and package names, or null on failure.
+     */
+    private function resolveInput(): ?array
+    {
+        $vendor  = (string) $this->argument('vendor');
+        $package = $this->argument('package');
+
+        if (str_contains($vendor, '/')) {
+            if ($package !== null) {
+                $this->error(
+                    'Conflicting arguments: vendor/package format'
+                    . ' and separate package argument cannot be used together.'
+                );
+                return null;
+            }
+            [$vendor, $package] = explode('/', $vendor, 2);
+        }
+
+        if ($package === null || $package === '') {
+            $this->error('Missing package name. Usage: check vendor/package or check vendor package');
+            return null;
+        }
+
+        $package = (string) $package;
+
+        if (!preg_match(self::NAME_PATTERN, $vendor)) {
+            $this->error("Invalid vendor name: {$vendor}");
+            return null;
+        }
+
+        if (!preg_match(self::NAME_PATTERN, $package)) {
+            $this->error("Invalid package name: {$package}");
+            return null;
+        }
+
+        $this->vendor  = $vendor;
+        $this->package = $package;
+
+        return [$vendor, $package];
+    }
+
+    /**
+     * Fetch package metadata from Packagist.
+     *
+     * @return \Illuminate\Http\Client\Response|null The response, or null on failure.
+     */
+    private function fetchPackageMetadata(): ?\Illuminate\Http\Client\Response
+    {
+        $months = (int) $this->argument('months');
+
+        $this->info('Checking: ' . sprintf('%s/%s', $this->vendor, $this->package));
+        $this->info('Months: ' . $months);
+
+        $payload = $this->http->get(
+            sprintf(
+                'https://packagist.org/packages/%s/%s.json',
+                $this->vendor,
+                $this->package
+            )
+        );
+
+        if ($payload->failed()) {
+            if ($payload->status() === 404) {
+                $this->error("Package not found: {$this->vendor}/{$this->package}");
+                return null;
+            }
+            $this->error("Failed to fetch package metadata (HTTP {$payload->status()})");
+            return null;
+        }
+
+        return $payload;
     }
 
     private function getStatsUrl(string $branch): string
