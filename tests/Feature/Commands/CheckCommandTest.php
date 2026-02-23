@@ -2,26 +2,69 @@
 
 use Illuminate\Support\Facades\Http;
 
-const TEST_COMMAND = 'check test-vendor test-package';
-const TEST_STATS_URL = 'packagist.org/packages/test-vendor/test-package/stats';
+const TEST_VENDOR  = 'test-vendor';
+const TEST_PACKAGE = 'test-package';
+const TEST_COMMAND = 'check ' . TEST_VENDOR . ' ' . TEST_PACKAGE;
+const TEST_METADATA_URL = 'packagist.org/packages/' . TEST_VENDOR . '/' . TEST_PACKAGE . '.json';
+const TEST_STATS_URL = 'packagist.org/packages/' . TEST_VENDOR . '/' . TEST_PACKAGE . '/stats';
+
+beforeEach(function () {
+    Http::preventStrayRequests();
+});
+
+function validMetadata(): array
+{
+    return [
+        'package' => [
+            'name'        => TEST_VENDOR . '/' . TEST_PACKAGE,
+            'description' => 'Test',
+            'time'        => '2024-01-01T00:00:00+00:00',
+            'type'        => 'library',
+            'repository'  => 'https://github.com/' . TEST_VENDOR . '/' . TEST_PACKAGE,
+            'language'    => 'PHP',
+            'versions'    => [
+                'dev-main'    => ['version' => 'dev-main'],
+                'dev-feature' => ['version' => 'dev-feature'],
+                '1.0.0'       => ['version' => '1.0.0'],
+            ],
+        ],
+    ];
+}
+
+function statsResponse(array $downloads): array
+{
+    return [
+        'labels' => ['2024-01', '2024-02', '2024-03'],
+        'values' => [$downloads],
+    ];
+}
+
+function fakePackageResponses(array $statsPerBranch = []): void
+{
+    $fakes = [TEST_METADATA_URL => Http::response(validMetadata())];
+    foreach ($statsPerBranch as $branch => $response) {
+        $fakes[TEST_STATS_URL . '/' . $branch . '.json*'] = $response;
+    }
+    Http::fake($fakes);
+}
 
 test('check command with slash format', function () {
-    Http::fake([
-        'packagist.org/packages/ivuorinen/branch-usage-checker.json' => Http::response(validMetadata()),
-        'packagist.org/packages/ivuorinen/branch-usage-checker/stats/*' => Http::response(statsResponse([1, 2, 3])),
+    fakePackageResponses([
+        'dev-feature' => Http::response(statsResponse([1, 2, 3])),
+        'dev-main'    => Http::response(statsResponse([1, 2, 3])),
     ]);
 
-    $this->artisan('check ivuorinen/branch-usage-checker')
+    $this->artisan('check ' . TEST_VENDOR . '/' . TEST_PACKAGE)
         ->assertExitCode(0);
 });
 
 test('check command with two arguments', function () {
-    Http::fake([
-        'packagist.org/packages/ivuorinen/branch-usage-checker.json' => Http::response(validMetadata()),
-        'packagist.org/packages/ivuorinen/branch-usage-checker/stats/*' => Http::response(statsResponse([1, 2, 3])),
+    fakePackageResponses([
+        'dev-feature' => Http::response(statsResponse([1, 2, 3])),
+        'dev-main'    => Http::response(statsResponse([1, 2, 3])),
     ]);
 
-    $this->artisan('check ivuorinen branch-usage-checker')
+    $this->artisan('check ' . TEST_VENDOR . ' ' . TEST_PACKAGE)
         ->assertExitCode(0);
 });
 
@@ -43,35 +86,6 @@ test('check command with invalid vendor shows error', function () {
         ->assertExitCode(1);
 });
 
-// --- New tests using Http::fake() ---
-
-function validMetadata(): array
-{
-    return [
-        'package' => [
-            'name'        => 'test-vendor/test-package',
-            'description' => 'Test',
-            'time'        => '2024-01-01T00:00:00+00:00',
-            'type'        => 'library',
-            'repository'  => 'https://github.com/test-vendor/test-package',
-            'language'    => 'PHP',
-            'versions'    => [
-                'dev-main'    => ['version' => 'dev-main'],
-                'dev-feature' => ['version' => 'dev-feature'],
-                '1.0.0'       => ['version' => '1.0.0'],
-            ],
-        ],
-    ];
-}
-
-function statsResponse(array $downloads): array
-{
-    return [
-        'labels' => ['2024-01', '2024-02', '2024-03'],
-        'values' => [$downloads],
-    ];
-}
-
 test('check command with invalid package name shows error', function () {
     $this->artisan('check valid-vendor INVALID!')
         ->expectsOutputToContain('Invalid package name')
@@ -90,7 +104,7 @@ test('check command with 404 shows package not found', function () {
 
 test('check command with 500 shows server error', function () {
     Http::fake([
-        'packagist.org/packages/test-vendor/test-package.json' => Http::response([], 500),
+        TEST_METADATA_URL => Http::response([], 500),
     ]);
 
     $this->artisan(TEST_COMMAND)
@@ -99,10 +113,9 @@ test('check command with 500 shows server error', function () {
 });
 
 test('check command skips branch when stats fetch fails', function () {
-    Http::fake([
-        'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        TEST_STATS_URL . '/dev-feature.json*' => Http::response([], 500),
-        TEST_STATS_URL . '/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
+    fakePackageResponses([
+        'dev-feature' => Http::response([], 500),
+        'dev-main'    => Http::response(statsResponse([10, 20, 30])),
     ]);
 
     $this->artisan(TEST_COMMAND)
@@ -111,9 +124,9 @@ test('check command skips branch when stats fetch fails', function () {
 });
 
 test('check command stops when all stats fail', function () {
-    Http::fake([
-        'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        TEST_STATS_URL . '/*' => Http::response([], 500),
+    fakePackageResponses([
+        'dev-feature' => Http::response([], 500),
+        'dev-main'    => Http::response([], 500),
     ]);
 
     $this->artisan(TEST_COMMAND)
@@ -123,7 +136,7 @@ test('check command stops when all stats fail', function () {
 
 test('check command lets TypeError propagate from malformed payload', function () {
     Http::fake([
-        'packagist.org/packages/test-vendor/test-package.json' => Http::response([
+        TEST_METADATA_URL => Http::response([
             'package' => ['versions' => 'not-an-array'],
         ]),
     ]);
@@ -132,10 +145,9 @@ test('check command lets TypeError propagate from malformed payload', function (
 })->throws(\TypeError::class);
 
 test('check command shows no suggestions when all branches have downloads', function () {
-    Http::fake([
-        'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        TEST_STATS_URL . '/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
-        TEST_STATS_URL . '/dev-feature.json*' => Http::response(statsResponse([5, 10, 15])),
+    fakePackageResponses([
+        'dev-main'    => Http::response(statsResponse([10, 20, 30])),
+        'dev-feature' => Http::response(statsResponse([5, 10, 15])),
     ]);
 
     $this->artisan(TEST_COMMAND)
@@ -144,10 +156,9 @@ test('check command shows no suggestions when all branches have downloads', func
 });
 
 test('check command suggests branches with zero downloads', function () {
-    Http::fake([
-        'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        TEST_STATS_URL . '/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
-        TEST_STATS_URL . '/dev-feature.json*' => Http::response(statsResponse([0, 0, 0])),
+    fakePackageResponses([
+        'dev-main'    => Http::response(statsResponse([10, 20, 30])),
+        'dev-feature' => Http::response(statsResponse([0, 0, 0])),
     ]);
 
     $this->artisan(TEST_COMMAND)

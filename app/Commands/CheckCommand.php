@@ -22,6 +22,8 @@ class CheckCommand extends Command
     private int $totalBranches = 0;
 
     private const NAME_PATTERN = '/^[a-z0-9]([_.\-]?[a-z0-9]+)*$/';
+    private const TIMEOUT_SECONDS = 10;
+    private const PACKAGIST_URL = 'https://packagist.org/packages/%s/%s';
 
     private HttpFactory $http;
 
@@ -30,17 +32,19 @@ class CheckCommand extends Command
     {
         $this->http = resolve(HttpFactory::class);
 
-        $resolved = $this->resolveInput();
-        if ($resolved === null) {
+        if (!$this->resolveInput()) {
             return 1;
         }
+
+        $months = (int) $this->argument('months');
+
+        $this->info(sprintf('Checking: %s/%s', $this->vendor, $this->package));
+        $this->info('Months: ' . $months);
 
         $payload = $this->fetchPackageMetadata();
         if ($payload === null) {
             return 1;
         }
-
-        $months = (int) $this->argument('months');
         $this->filter = now()->subMonths($months)->day(1)->toDateString();
 
         try {
@@ -64,7 +68,7 @@ class CheckCommand extends Command
 
             $responses = $this->http->pool(
                 fn (Pool $pool) => $versions->map(
-                    fn ($branch) => $pool->as($branch)->timeout(10)->get($this->getStatsUrl($branch))
+                    fn ($branch) => $pool->as($branch)->timeout(self::TIMEOUT_SECONDS)->get($this->getStatsUrl($branch))
                 )->toArray()
             );
 
@@ -85,10 +89,12 @@ class CheckCommand extends Command
                 $values[] = array_sum($values);
 
                 if (count($labels) !== count($values)) {
-                    $this->warn(
-                        "Malformed stats for {$branch} (labels: "
-                        . count($labels) . ", values: " . count($values) . "), skipping."
-                    );
+                    $this->warn(sprintf(
+                        'Malformed stats for %s (labels: %d, values: %d), skipping.',
+                        $branch,
+                        count($labels),
+                        count($values)
+                    ));
                     continue;
                 }
                 $statistics[$branch] = \array_combine($labels, $values);
@@ -108,7 +114,7 @@ class CheckCommand extends Command
     }
 
     /** Parse and validate vendor/package input arguments. */
-    private function resolveInput(): ?array
+    private function resolveInput(): bool
     {
         $vendor  = strtolower((string) $this->argument('vendor'));
         $package = $this->argument('package');
@@ -119,45 +125,40 @@ class CheckCommand extends Command
                     'Conflicting arguments: vendor/package format'
                     . ' and separate package argument cannot be used together.'
                 );
-                return null;
+                return false;
             }
             [$vendor, $package] = explode('/', $vendor, 2);
         }
 
         if ($package === null || $package === '') {
             $this->error('Missing package name. Usage: check vendor/package or check vendor package');
-            return null;
+            return false;
         }
 
         $package = strtolower((string) $package);
 
         if (!preg_match(self::NAME_PATTERN, $vendor)) {
             $this->error("Invalid vendor name: {$vendor}");
-            return null;
+            return false;
         }
 
         if (!preg_match(self::NAME_PATTERN, $package)) {
             $this->error("Invalid package name: {$package}");
-            return null;
+            return false;
         }
 
         $this->vendor  = $vendor;
         $this->package = $package;
 
-        return [$vendor, $package];
+        return true;
     }
 
     /** Fetch package metadata from Packagist. */
     private function fetchPackageMetadata(): ?\Illuminate\Http\Client\Response
     {
-        $months = (int) $this->argument('months');
-
-        $this->info('Checking: ' . sprintf('%s/%s', $this->vendor, $this->package));
-        $this->info('Months: ' . $months);
-
-        $payload = $this->http->timeout(10)->get(
+        $payload = $this->http->timeout(self::TIMEOUT_SECONDS)->get(
             sprintf(
-                'https://packagist.org/packages/%s/%s.json',
+                self::PACKAGIST_URL . '.json',
                 $this->vendor,
                 $this->package
             )
@@ -179,7 +180,7 @@ class CheckCommand extends Command
     private function getStatsUrl(string $branch): string
     {
         return sprintf(
-            'https://packagist.org/packages/%s/%s/stats/%s.json?average=monthly&from=%s',
+            self::PACKAGIST_URL . '/stats/%s.json?average=monthly&from=%s',
             $this->vendor,
             $this->package,
             $branch,
@@ -221,7 +222,7 @@ class CheckCommand extends Command
             if (!empty($values['Total'])) {
                 continue;
             }
-            $deletable[$k] = $values['Total'];
+            $deletable[] = $k;
         }
 
         if (empty($deletable)) {
@@ -229,14 +230,12 @@ class CheckCommand extends Command
             return;
         }
 
-        $keys = array_keys($deletable);
-
-        $branches = collect($keys)->mapWithKeys(function ($branch) {
+        $branches = collect($deletable)->mapWithKeys(function ($branch) {
             return [
                 $branch => [
                     $branch,
                     sprintf(
-                        'https://packagist.org/packages/%s/%s#%s',
+                        self::PACKAGIST_URL . '#%s',
                         $this->vendor,
                         $this->package,
                         $branch
