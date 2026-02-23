@@ -83,6 +83,13 @@ class CheckCommand extends Command
                 $labels[] = 'Total';
                 $values[] = array_sum($values);
 
+                if (count($labels) !== count($values)) {
+                    $this->warn(
+                        "Malformed stats for {$branch} (labels: "
+                        . count($labels) . ", values: " . count($values) . "), skipping."
+                    );
+                    continue;
+                }
                 $statistics[$branch] = \array_combine($labels, $values);
             }
 
