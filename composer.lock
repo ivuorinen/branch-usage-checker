@@ -6505,21 +6505,21 @@
         },
         {
             "name": "nunomaduro/laravel-console-summary",
-            "version": "v1.13.0",
+            "version": "v1.14.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nunomaduro/laravel-console-summary.git",
-                "reference": "8fe07f5ecbedca8544edc54f397538dc0b49d7f9"
+                "reference": "21c4c5c432bd0db55d747647a7b3a75be71bf67b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nunomaduro/laravel-console-summary/zipball/8fe07f5ecbedca8544edc54f397538dc0b49d7f9",
-                "reference": "8fe07f5ecbedca8544edc54f397538dc0b49d7f9",
+                "url": "https://api.github.com/repos/nunomaduro/laravel-console-summary/zipball/21c4c5c432bd0db55d747647a7b3a75be71bf67b",
+                "reference": "21c4c5c432bd0db55d747647a7b3a75be71bf67b",
                 "shasum": ""
             },
             "require": {
-                "illuminate/console": "^11.4|^12.0",
-                "illuminate/support": "^11.4|^12.0",
+                "illuminate/console": "^11.4|^12.0|^13.0",
+                "illuminate/support": "^11.4|^12.0|^13.0",
                 "php": "^8.2"
             },
             "require-dev": {
@@ -6563,7 +6563,7 @@
                 "issues": "https://github.com/nunomaduro/laravel-console-summary/issues",
                 "source": "https://github.com/nunomaduro/laravel-console-summary"
             },
-            "time": "2025-02-19T11:10:44+00:00"
+            "time": "2026-02-23T09:40:19+00:00"
         },
         {
             "name": "nunomaduro/laravel-console-task",
