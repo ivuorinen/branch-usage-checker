@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Http;
 
+const TEST_COMMAND = 'check test-vendor test-package';
+const TEST_STATS_URL = 'packagist.org/packages/test-vendor/test-package/stats';
+
 test('check command with slash format', function () {
     $this->artisan('check ivuorinen/branch-usage-checker')
         ->assertExitCode(0);
@@ -80,20 +83,19 @@ test('check command with 500 shows server error', function () {
         'packagist.org/packages/test-vendor/test-package.json' => Http::response([], 500),
     ]);
 
-    $this->artisan('check test-vendor test-package')
+    $this->artisan(TEST_COMMAND)
         ->expectsOutputToContain('Failed to fetch package metadata (HTTP 500)')
         ->assertExitCode(1);
 });
 
 test('check command skips branch when stats fetch fails', function () {
-    $stats = 'packagist.org/packages/test-vendor/test-package/stats';
     Http::fake([
         'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        "{$stats}/dev-feature.json*" => Http::response([], 500),
-        "{$stats}/dev-main.json*" => Http::response(statsResponse([10, 20, 30])),
+        TEST_STATS_URL . '/dev-feature.json*' => Http::response([], 500),
+        TEST_STATS_URL . '/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
     ]);
 
-    $this->artisan('check test-vendor test-package')
+    $this->artisan(TEST_COMMAND)
         ->expectsOutputToContain('Failed to fetch stats for dev-feature')
         ->assertExitCode(0);
 });
@@ -101,10 +103,10 @@ test('check command skips branch when stats fetch fails', function () {
 test('check command stops when all stats fail', function () {
     Http::fake([
         'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        'packagist.org/packages/test-vendor/test-package/stats/*' => Http::response([], 500),
+        TEST_STATS_URL . '/*' => Http::response([], 500),
     ]);
 
-    $this->artisan('check test-vendor test-package')
+    $this->artisan(TEST_COMMAND)
         ->expectsOutputToContain('No statistics found... Stopping.')
         ->assertExitCode(0);
 });
@@ -116,32 +118,30 @@ test('check command handles exception in try block', function () {
         ]),
     ]);
 
-    $this->artisan('check test-vendor test-package')
+    $this->artisan(TEST_COMMAND)
         ->assertExitCode(0);
 });
 
 test('check command shows no suggestions when all branches have downloads', function () {
-    $stats = 'packagist.org/packages/test-vendor/test-package/stats';
     Http::fake([
         'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        "{$stats}/dev-main.json*" => Http::response(statsResponse([10, 20, 30])),
-        "{$stats}/dev-feature.json*" => Http::response(statsResponse([5, 10, 15])),
+        TEST_STATS_URL . '/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
+        TEST_STATS_URL . '/dev-feature.json*' => Http::response(statsResponse([5, 10, 15])),
     ]);
 
-    $this->artisan('check test-vendor test-package')
+    $this->artisan(TEST_COMMAND)
         ->expectsOutputToContain('No suggestions available. Good job!')
         ->assertExitCode(0);
 });
 
 test('check command suggests branches with zero downloads', function () {
-    $stats = 'packagist.org/packages/test-vendor/test-package/stats';
     Http::fake([
         'packagist.org/packages/test-vendor/test-package.json' => Http::response(validMetadata()),
-        "{$stats}/dev-main.json*" => Http::response(statsResponse([10, 20, 30])),
-        "{$stats}/dev-feature.json*" => Http::response(statsResponse([0, 0, 0])),
+        TEST_STATS_URL . '/dev-main.json*' => Http::response(statsResponse([10, 20, 30])),
+        TEST_STATS_URL . '/dev-feature.json*' => Http::response(statsResponse([0, 0, 0])),
     ]);
 
-    $this->artisan('check test-vendor test-package')
+    $this->artisan(TEST_COMMAND)
         ->expectsOutputToContain('Found 1 branches')
         ->assertExitCode(0);
 });
