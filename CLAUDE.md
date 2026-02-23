@@ -19,6 +19,7 @@ application.
 - `composer build` — Build PHAR executable
   to `builds/branch-usage-checker`
 - `composer lint` — Check code style (PHPCS)
+- `composer lint:phpmd` — Static analysis (PHPMD)
 - `composer lint:md` — Lint markdown files
 - `composer lint:ec` — Check EditorConfig compliance
 - `composer lint:all` — Run all linters

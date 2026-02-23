@@ -33,6 +33,7 @@
     "laravel-zero/framework": "^12",
     "mockery/mockery": "^1",
     "pestphp/pest": "^4",
+    "phpmd/phpmd": "^2.15",
     "roave/security-advisories": "dev-latest",
     "squizlabs/php_codesniffer": "^4.0"
   },
@@ -79,6 +80,7 @@
     "lint": "vendor/bin/phpcs",
     "lint:all": [
       "@lint",
+      "@lint:phpmd",
       "@lint:md",
       "@lint:ec"
     ],
@@ -87,6 +89,7 @@
       "npx markdownlint-cli2 '**/*.md' '#vendor' '#node_modules'",
       "npx markdown-table-formatter --check *.md docs/**/*.md"
     ],
+    "lint:phpmd": "vendor/bin/phpmd app,tests text phpmd.xml",
     "test": "vendor/bin/pest",
     "x": "@php builds/branch-usage-checker"
   }

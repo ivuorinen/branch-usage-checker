@@ -15,6 +15,18 @@
         }
       },
       {
+        "action": "vendor/bin/phpmd {$STAGED_FILES|of-type:php|separated-by:,} text phpmd.xml",
+        "conditions": [
+          {
+            "exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType",
+            "args": ["php"]
+          }
+        ],
+        "config": {
+          "label": "Check code quality with PHPMD"
+        }
+      },
+      {
         "action": "npx editorconfig-checker {$STAGED_FILES}",
         "config": {
           "label": "Check EditorConfig compliance"
