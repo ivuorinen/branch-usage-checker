@@ -121,17 +121,15 @@ test('check command stops when all stats fail', function () {
         ->assertExitCode(0);
 });
 
-test('check command handles exception in try block', function () {
+test('check command lets TypeError propagate from malformed payload', function () {
     Http::fake([
         'packagist.org/packages/test-vendor/test-package.json' => Http::response([
             'package' => ['versions' => 'not-an-array'],
         ]),
     ]);
 
-    $this->artisan(TEST_COMMAND)
-        ->expectsOutputToContain('Cannot assign string to property')
-        ->assertExitCode(1);
-});
+    $this->artisan(TEST_COMMAND);
+})->throws(\TypeError::class);
 
 test('check command shows no suggestions when all branches have downloads', function () {
     Http::fake([

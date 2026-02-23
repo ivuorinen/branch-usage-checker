@@ -25,6 +25,7 @@ class CheckCommand extends Command
 
     private HttpFactory $http;
 
+    /** Execute the check command. */
     public function handle(): int
     {
         $this->http = resolve(HttpFactory::class);
@@ -98,7 +99,7 @@ class CheckCommand extends Command
             if ($this->outputTable($statistics)) {
                 $this->outputSuggestions($statistics);
             }
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->error($e->getMessage());
             return 1;
         }
@@ -106,11 +107,7 @@ class CheckCommand extends Command
         return 0;
     }
 
-    /**
-     * Parse and validate vendor/package input arguments.
-     *
-     * @return array{string, string}|null Vendor and package names, or null on failure.
-     */
+    /** Parse and validate vendor/package input arguments. */
     private function resolveInput(): ?array
     {
         $vendor  = strtolower((string) $this->argument('vendor'));
@@ -150,11 +147,7 @@ class CheckCommand extends Command
         return [$vendor, $package];
     }
 
-    /**
-     * Fetch package metadata from Packagist.
-     *
-     * @return \Illuminate\Http\Client\Response|null The response, or null on failure.
-     */
+    /** Fetch package metadata from Packagist. */
     private function fetchPackageMetadata(): ?\Illuminate\Http\Client\Response
     {
         $months = (int) $this->argument('months');
@@ -182,6 +175,7 @@ class CheckCommand extends Command
         return $payload;
     }
 
+    /** Build the Packagist stats API URL for a branch. */
     private function getStatsUrl(string $branch): string
     {
         return sprintf(
@@ -193,6 +187,7 @@ class CheckCommand extends Command
         );
     }
 
+    /** Render the download statistics table. */
     private function outputTable(array $statistics): bool
     {
         if (empty($statistics)) {
@@ -217,7 +212,8 @@ class CheckCommand extends Command
         return true;
     }
 
-    private function outputSuggestions(array $statistics = []): void
+    /** Render suggestions for zero-download branches. */
+    private function outputSuggestions(array $statistics): void
     {
         $deletable = [];
 
