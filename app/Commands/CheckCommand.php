@@ -217,7 +217,7 @@ class CheckCommand extends Command
         return true;
     }
 
-    private function outputSuggestions(array $statistics = []): bool
+    private function outputSuggestions(array $statistics = []): void
     {
         $deletable = [];
 
@@ -230,7 +230,7 @@ class CheckCommand extends Command
 
         if (empty($deletable)) {
             $this->info('No suggestions available. Good job!');
-            return false;
+            return;
         }
 
         $keys = array_keys($deletable);
@@ -259,7 +259,5 @@ class CheckCommand extends Command
             )
         );
         $this->table(['Branch', 'URL'], $branches);
-
-        return true;
     }
 }
