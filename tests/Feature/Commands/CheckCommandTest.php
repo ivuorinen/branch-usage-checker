@@ -110,6 +110,17 @@ test('check command skips branch when stats fetch fails', function () {
         ->assertExitCode(0);
 });
 
+test('check command skips branch on connection failure', function () {
+    fakePackageResponses([
+        'dev-feature' => Http::failedConnection(),
+        'dev-main'    => Http::response(statsResponse([10, 20, 30])),
+    ]);
+
+    $this->artisan(TEST_COMMAND)
+        ->expectsOutputToContain('Failed to fetch stats for dev-feature')
+        ->assertExitCode(0);
+});
+
 test('check command stops when all stats fail', function () {
     fakePackageResponses([
         'dev-feature' => Http::response([], 500),

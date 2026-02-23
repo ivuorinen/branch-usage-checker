@@ -72,40 +72,17 @@ class CheckCommand extends Command
                 )->toArray()
             );
 
-            $statistics = [];
-            foreach ($versions as $branch) {
-                $response = $responses[$branch];
-
-                if ($response->failed()) {
-                    $this->warn("Failed to fetch stats for {$branch} (HTTP {$response->status()}), skipping.");
-                    continue;
-                }
-
-                $data   = collect($response->json());
-                $labels = collect($data->get('labels', []))->toArray();
-                $values = collect($data->get('values', []))->flatten()->toArray();
-
-                $labels[] = 'Total';
-                $values[] = array_sum($values);
-
-                if (count($labels) !== count($values)) {
-                    $this->warn(sprintf(
-                        'Malformed stats for %s (labels: %d, values: %d), skipping.',
-                        $branch,
-                        count($labels),
-                        count($values)
-                    ));
-                    continue;
-                }
-                $statistics[$branch] = \array_combine($labels, $values);
-            }
+            $statistics = $this->collectBranchStats($versions, $responses);
 
             $this->info('Downloaded statistics...');
 
             if ($this->outputTable($statistics)) {
                 $this->outputSuggestions($statistics);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            if ($e instanceof \TypeError) {
+                throw $e;
+            }
             $this->error($e->getMessage());
             return 1;
         }
@@ -186,6 +163,45 @@ class CheckCommand extends Command
             $branch,
             $this->filter
         );
+    }
+
+    /** Parse pooled responses into branch download statistics. */
+    private function collectBranchStats($versions, array $responses): array
+    {
+        $statistics = [];
+        foreach ($versions as $branch) {
+            $response = $responses[$branch];
+
+            if ($response instanceof \Throwable) {
+                $this->warn("Failed to fetch stats for {$branch}, skipping.");
+                continue;
+            }
+
+            if ($response->failed()) {
+                $this->warn("Failed to fetch stats for {$branch} (HTTP {$response->status()}), skipping.");
+                continue;
+            }
+
+            $data   = collect($response->json());
+            $labels = collect($data->get('labels', []))->toArray();
+            $values = collect($data->get('values', []))->flatten()->toArray();
+
+            $labels[] = 'Total';
+            $values[] = array_sum($values);
+
+            if (count($labels) !== count($values)) {
+                $this->warn(sprintf(
+                    'Malformed stats for %s (labels: %d, values: %d), skipping.',
+                    $branch,
+                    count($labels),
+                    count($values)
+                ));
+                continue;
+            }
+            $statistics[$branch] = \array_combine($labels, $values);
+        }
+
+        return $statistics;
     }
 
     /** Render the download statistics table. */
