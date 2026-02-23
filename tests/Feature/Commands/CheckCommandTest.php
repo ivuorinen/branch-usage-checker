@@ -6,11 +6,21 @@ const TEST_COMMAND = 'check test-vendor test-package';
 const TEST_STATS_URL = 'packagist.org/packages/test-vendor/test-package/stats';
 
 test('check command with slash format', function () {
+    Http::fake([
+        'packagist.org/packages/ivuorinen/branch-usage-checker.json' => Http::response(validMetadata()),
+        'packagist.org/packages/ivuorinen/branch-usage-checker/stats/*' => Http::response(statsResponse([1, 2, 3])),
+    ]);
+
     $this->artisan('check ivuorinen/branch-usage-checker')
         ->assertExitCode(0);
 });
 
 test('check command with two arguments', function () {
+    Http::fake([
+        'packagist.org/packages/ivuorinen/branch-usage-checker.json' => Http::response(validMetadata()),
+        'packagist.org/packages/ivuorinen/branch-usage-checker/stats/*' => Http::response(statsResponse([1, 2, 3])),
+    ]);
+
     $this->artisan('check ivuorinen branch-usage-checker')
         ->assertExitCode(0);
 });
@@ -119,7 +129,8 @@ test('check command handles exception in try block', function () {
     ]);
 
     $this->artisan(TEST_COMMAND)
-        ->assertExitCode(0);
+        ->expectsOutputToContain('Cannot assign string to property')
+        ->assertExitCode(1);
 });
 
 test('check command shows no suggestions when all branches have downloads', function () {
