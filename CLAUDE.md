@@ -23,7 +23,7 @@ application.
 - `composer lint:ec` — Check EditorConfig compliance
 - `composer lint:all` — Run all linters
 - `composer format` — Auto-fix code style (PHPCBF)
-- `composer format:md` — Format markdown tables
+- `composer format:md` — Format Markdown tables
 - `composer x` — Run the built PHAR
 - `vendor/bin/pest --filter "test name"` — Run a
   single test
@@ -66,7 +66,7 @@ accepts a combined `vendor/package` form, making
 - `app/Commands/` — CLI commands
   (CheckCommand is the primary one)
 - `app/Dto/` — Spatie DataTransferObject classes
-  for Packagist/GitHub API responses
+  for Packagist API responses
 - `tests/Feature/Commands/` — Feature tests
   for commands
 - `builds/` — PHAR output directory
