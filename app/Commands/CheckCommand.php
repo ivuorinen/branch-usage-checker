@@ -63,7 +63,7 @@ class CheckCommand extends Command
 
             $responses = $this->http->pool(
                 fn (Pool $pool) => $versions->map(
-                    fn ($branch) => $pool->as($branch)->get($this->getStatsUrl($branch))
+                    fn ($branch) => $pool->as($branch)->timeout(10)->get($this->getStatsUrl($branch))
                 )->toArray()
             );
 
@@ -93,6 +93,7 @@ class CheckCommand extends Command
             }
         } catch (\Throwable $e) {
             $this->error($e->getMessage());
+            return 1;
         }
 
         return 0;
@@ -105,7 +106,7 @@ class CheckCommand extends Command
      */
     private function resolveInput(): ?array
     {
-        $vendor  = (string) $this->argument('vendor');
+        $vendor  = strtolower((string) $this->argument('vendor'));
         $package = $this->argument('package');
 
         if (str_contains($vendor, '/')) {
@@ -124,7 +125,7 @@ class CheckCommand extends Command
             return null;
         }
 
-        $package = (string) $package;
+        $package = strtolower((string) $package);
 
         if (!preg_match(self::NAME_PATTERN, $vendor)) {
             $this->error("Invalid vendor name: {$vendor}");
@@ -154,7 +155,7 @@ class CheckCommand extends Command
         $this->info('Checking: ' . sprintf('%s/%s', $this->vendor, $this->package));
         $this->info('Months: ' . $months);
 
-        $payload = $this->http->get(
+        $payload = $this->http->timeout(10)->get(
             sprintf(
                 'https://packagist.org/packages/%s/%s.json',
                 $this->vendor,
@@ -222,7 +223,7 @@ class CheckCommand extends Command
 
         if (empty($deletable)) {
             $this->info('No suggestions available. Good job!');
-            return true;
+            return false;
         }
 
         $keys = array_keys($deletable);
