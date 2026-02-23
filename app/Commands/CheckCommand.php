@@ -3,14 +3,15 @@
 namespace App\Commands;
 
 use App\Dto\PackagistApiPackagePayload;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Factory as HttpFactory;
+use Illuminate\Http\Client\Pool;
 use LaravelZero\Framework\Commands\Command;
 
 class CheckCommand extends Command
 {
     protected $signature = 'check
-        {vendor : Package vendor (required)}
-        {package : Package name (required)}
+        {vendor : Package vendor or vendor/package}
+        {package? : Package name}
         {months=9 : How many months should we return for review (optional)}
         ';
     protected $description = 'Check package branch usage';
@@ -20,23 +21,30 @@ class CheckCommand extends Command
     private string $filter = '';
     private int $totalBranches = 0;
 
+    private const NAME_PATTERN = '/^[a-z0-9]([_.\-]?[a-z0-9]+)*$/';
+    private const TIMEOUT_SECONDS = 10;
+    private const PACKAGIST_URL = 'https://packagist.org/packages/%s/%s';
+
+    private HttpFactory $http;
+
+    /** Execute the check command. */
     public function handle(): int
     {
-        $this->vendor  = (string)$this->argument('vendor');
-        $this->package = (string)$this->argument('package');
-        $months        = (int)$this->argument('months');
+        $this->http = resolve(HttpFactory::class);
 
-        $this->info('Checking: ' . sprintf('%s/%s', $this->vendor, $this->package));
+        if (!$this->resolveInput()) {
+            return 1;
+        }
+
+        $months = (int) $this->argument('months');
+
+        $this->info(sprintf('Checking: %s/%s', $this->vendor, $this->package));
         $this->info('Months: ' . $months);
 
-        $payload = Http::get(
-            sprintf(
-                'https://packagist.org/packages/%s/%s.json',
-                $this->vendor,
-                $this->package
-            )
-        );
-
+        $payload = $this->fetchPackageMetadata();
+        if ($payload === null) {
+            return 1;
+        }
         $this->filter = now()->subMonths($months)->day(1)->toDateString();
 
         try {
@@ -45,9 +53,9 @@ class CheckCommand extends Command
 
             $versions = collect($pkg->versions ?? [])
                 ->keys()
-                // Filter actual versions out.
                 ->filter(fn ($version) => \str_starts_with($version, 'dev-'))
-                ->sort();
+                ->sort()
+                ->values();
 
             $this->totalBranches = $versions->count();
 
@@ -58,48 +66,150 @@ class CheckCommand extends Command
                 )
             );
 
-            $statistics = collect($versions)
-                ->mapWithKeys(fn ($branch) => $this->getStatistics($branch))
-                ->toArray();
+            $responses = $this->http->pool(
+                fn (Pool $pool) => $versions->map(
+                    fn ($branch) => $pool->as($branch)->timeout(self::TIMEOUT_SECONDS)->get($this->getStatsUrl($branch))
+                )->toArray()
+            );
+
+            $statistics = $this->collectBranchStats($versions, $responses);
 
             $this->info('Downloaded statistics...');
 
-            $this->outputTable($statistics);
-            $this->outputSuggestions($statistics);
-        } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e);
+            if ($this->outputTable($statistics)) {
+                $this->outputSuggestions($statistics);
+            }
+        } catch (\Throwable $e) {
+            if ($e instanceof \TypeError) {
+                throw $e;
+            }
+            $this->error($e->getMessage());
+            return 1;
         }
 
         return 0;
     }
 
-    private function getStatistics(string $branch): array
+    /** Parse and validate vendor/package input arguments. */
+    private function resolveInput(): bool
     {
-        $payload = Http::get(
+        $vendor  = strtolower((string) $this->argument('vendor'));
+        $package = $this->argument('package');
+
+        if (str_contains($vendor, '/')) {
+            if ($package !== null) {
+                $this->error(
+                    'Conflicting arguments: vendor/package format'
+                    . ' and separate package argument cannot be used together.'
+                );
+                return false;
+            }
+            [$vendor, $package] = explode('/', $vendor, 2);
+        }
+
+        if ($package === null || $package === '') {
+            $this->error('Missing package name. Usage: check vendor/package or check vendor package');
+            return false;
+        }
+
+        $package = strtolower((string) $package);
+
+        if (!preg_match(self::NAME_PATTERN, $vendor)) {
+            $this->error("Invalid vendor name: {$vendor}");
+            return false;
+        }
+
+        if (!preg_match(self::NAME_PATTERN, $package)) {
+            $this->error("Invalid package name: {$package}");
+            return false;
+        }
+
+        $this->vendor  = $vendor;
+        $this->package = $package;
+
+        return true;
+    }
+
+    /** Fetch package metadata from Packagist. */
+    private function fetchPackageMetadata(): ?\Illuminate\Http\Client\Response
+    {
+        $payload = $this->http->timeout(self::TIMEOUT_SECONDS)->get(
             sprintf(
-                'https://packagist.org/packages/%s/%s/stats/%s.json?average=monthly&from=%s',
+                self::PACKAGIST_URL . '.json',
                 $this->vendor,
-                $this->package,
-                $branch,
-                $this->filter
+                $this->package
             )
         );
 
-        $data   = collect($payload->json());
-        $labels = collect($data->get('labels', []))->toArray();
-        $values = collect($data->get('values', []))->flatten()->toArray();
+        if ($payload->failed()) {
+            if ($payload->status() === 404) {
+                $this->error("Package not found: {$this->vendor}/{$this->package}");
+                return null;
+            }
+            $this->error("Failed to fetch package metadata (HTTP {$payload->status()})");
+            return null;
+        }
 
-        $labels[] = 'Total';
-        $values[] = array_sum($values);
-
-        return [$branch => \array_combine($labels, $values)];
+        return $payload;
     }
 
-    private function outputTable(array $statistics): void
+    /** Build the Packagist stats API URL for a branch. */
+    private function getStatsUrl(string $branch): string
+    {
+        return sprintf(
+            self::PACKAGIST_URL . '/stats/%s.json?average=monthly&from=%s',
+            $this->vendor,
+            $this->package,
+            $branch,
+            $this->filter
+        );
+    }
+
+    /** Parse pooled responses into branch download statistics. */
+    private function collectBranchStats($versions, array $responses): array
+    {
+        $statistics = [];
+        foreach ($versions as $branch) {
+            $response = $responses[$branch];
+
+            if ($response instanceof \Throwable) {
+                $this->warn("Failed to fetch stats for {$branch}, skipping.");
+                continue;
+            }
+
+            if ($response->failed()) {
+                $this->warn("Failed to fetch stats for {$branch} (HTTP {$response->status()}), skipping.");
+                continue;
+            }
+
+            $data   = collect($response->json());
+            $labels = collect($data->get('labels', []))->toArray();
+            $values = collect($data->get('values', []))->flatten()->toArray();
+
+            $labels[] = 'Total';
+            $values[] = array_sum($values);
+
+            if (count($labels) !== count($values)) {
+                $this->warn(sprintf(
+                    'Malformed stats for %s (labels: %d, values: %d), skipping.',
+                    $branch,
+                    count($labels),
+                    count($values)
+                ));
+                continue;
+            }
+            $statistics[$branch] = \array_combine($labels, $values);
+        }
+
+        return $statistics;
+    }
+
+    /** Render the download statistics table. */
+    private function outputTable(array $statistics): bool
     {
         if (empty($statistics)) {
             $this->info('No statistics found... Stopping.');
-            exit(0);
+            return false;
         }
 
         $tableHeaders  = ['' => 'Branch'];
@@ -107,44 +217,41 @@ class CheckCommand extends Command
 
         foreach ($statistics as $branch => $stats) {
             foreach ($stats as $m => $v) {
-                $tableHeaders[$m]                = (string)$m;
+                $tableHeaders[$m]                = (string) $m;
                 $tableBranches[$branch][$branch] = $branch;
-                $tableBranches[$branch][$m]      = (string)$v;
+                $tableBranches[$branch][$m]      = (string) $v;
             }
         }
 
         $this->line('');
         $this->table($tableHeaders, $tableBranches);
+
+        return true;
     }
 
-    private function outputSuggestions(array $statistics = []): void
+    /** Render suggestions for zero-download branches. */
+    private function outputSuggestions(array $statistics): void
     {
         $deletable = [];
-        if (empty($statistics)) {
-            $this->info('No statistics to give suggestions for. Quitting...');
-            exit(0);
-        }
 
         foreach ($statistics as $k => $values) {
             if (!empty($values['Total'])) {
                 continue;
             }
-            $deletable[$k] = $values['Total'];
+            $deletable[] = $k;
         }
 
         if (empty($deletable)) {
             $this->info('No suggestions available. Good job!');
-            exit(0);
+            return;
         }
 
-        $keys = array_keys($deletable);
-
-        $branches = collect($keys)->mapWithKeys(function ($branch) {
+        $branches = collect($deletable)->mapWithKeys(function ($branch) {
             return [
                 $branch => [
                     $branch,
                     sprintf(
-                        'https://packagist.org/packages/%s/%s#%s',
+                        self::PACKAGIST_URL . '#%s',
                         $this->vendor,
                         $this->package,
                         $branch

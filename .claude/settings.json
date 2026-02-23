@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_FILE_PATH\" in */vendor/*|*/composer.lock) echo 'BLOCK: Do not edit vendor or lock files directly' >&2; exit 1;; esac"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_FILE_PATH\" in *.php) vendor/bin/phpcbf --standard=phpcs.xml \"$CLAUDE_FILE_PATH\" 2>/dev/null; true;; esac",
+            "timeout": 10000
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(composer test:*)",
+      "Bash(composer lint:*)",
+      "Bash(composer lint:all:*)",
+      "Bash(composer format:*)",
+      "Bash(composer format:md:*)",
+      "Bash(composer coverage:*)",
+      "Bash(composer build:*)",
+      "Bash(vendor/bin/pest:*)",
+      "Bash(vendor/bin/phpcs:*)",
+      "Bash(vendor/bin/phpcbf:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)"
+    ]
+  }
+}

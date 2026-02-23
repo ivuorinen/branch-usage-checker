@@ -1,0 +1,51 @@
+{
+  "pre-commit": {
+    "enabled": true,
+    "actions": [
+      {
+        "action": "vendor/bin/phpcbf --standard=phpcs.xml {$STAGED_FILES|of-type:php}",
+        "config": {
+          "label": "Fix code style with PHPCBF"
+        }
+      },
+      {
+        "action": "vendor/bin/phpcs --standard=phpcs.xml {$STAGED_FILES|of-type:php}",
+        "config": {
+          "label": "Check code style with PHPCS"
+        }
+      },
+      {
+        "action": "vendor/bin/phpmd {$STAGED_FILES|of-type:php|separated-by:,} text phpmd.xml",
+        "conditions": [
+          {
+            "exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType",
+            "args": ["php"]
+          }
+        ],
+        "config": {
+          "label": "Check code quality with PHPMD"
+        }
+      },
+      {
+        "action": "npx editorconfig-checker {$STAGED_FILES}",
+        "config": {
+          "label": "Check EditorConfig compliance"
+        }
+      },
+      {
+        "action": "npx markdownlint-cli2 {$STAGED_FILES|of-type:md}",
+        "config": {
+          "label": "Lint Markdown files"
+        }
+      }
+    ]
+  },
+  "pre-push": {
+    "enabled": false,
+    "actions": []
+  },
+  "commit-msg": {
+    "enabled": false,
+    "actions": []
+  }
+}
