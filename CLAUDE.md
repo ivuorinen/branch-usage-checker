@@ -46,8 +46,10 @@ via `bootstrap/app.php`.
 
 ### Core Flow (CheckCommand)
 
-`check {vendor} {package} {months=9}` — the main
-(and only functional) command:
+`check {vendor} {package?} {months=9}` — the main
+(and only functional) command. The `vendor` argument
+accepts a combined `vendor/package` form, making
+`package` optional in that case:
 
 1. Fetches package metadata from
    `packagist.org/packages/{vendor}/{package}.json`
@@ -65,16 +67,14 @@ via `bootstrap/app.php`.
   (CheckCommand is the primary one)
 - `app/Dto/` — Spatie DataTransferObject classes
   for Packagist/GitHub API responses
-- `app/Fetchers/` — API clients
-  (GitHubRestApi exists but is currently unused)
 - `tests/Feature/Commands/` — Feature tests
   for commands
 - `builds/` — PHAR output directory
 
 ### Dependencies of Note
 
-- HTTP requests use
-  `Illuminate\Support\Facades\Http` (Guzzle-backed)
+- HTTP requests use `Illuminate\Http\Client\Factory`
+  (Guzzle-backed), injected via the container
 - DTOs use `spatie/data-transfer-object` with
   `MapFrom` attributes for JSON field mapping
 - PHAR building configured in `box.json`
