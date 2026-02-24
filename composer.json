@@ -23,8 +23,7 @@
   },
   "require": {
     "php": "^8.4",
-    "illuminate/http": "^12.17",
-    "spatie/data-transfer-object": "^3.7"
+    "illuminate/http": "^12.17"
   },
   "require-dev": {
     "captainhook/captainhook": "^5.28",
