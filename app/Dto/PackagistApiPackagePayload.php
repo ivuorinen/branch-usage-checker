@@ -2,22 +2,32 @@
 
 namespace App\Dto;
 
-use Spatie\DataTransferObject\Attributes\MapFrom;
-
-class PackagistApiPackagePayload extends \Spatie\DataTransferObject\DataTransferObject
+final readonly class PackagistApiPackagePayload
 {
-    #[MapFrom('package.name')]
-    public string $name = '';
-    #[MapFrom('package.description')]
-    public string $description = '';
-    #[MapFrom('package.time')]
-    public string $time = '';
-    #[MapFrom('package.versions')]
-    public array $versions = [];
-    #[MapFrom('package.type')]
-    public string $type = '';
-    #[MapFrom('package.repository')]
-    public string $repository = '';
-    #[MapFrom('package.language')]
-    public string $language = '';
+    public function __construct(
+        public string $name = '',
+        public string $description = '',
+        public string $time = '',
+        public array $versions = [],
+        public string $type = '',
+        public string $repository = '',
+        public string $language = '',
+    ) {
+    }
+
+    /** Create from the raw Packagist API response array. */
+    public static function fromResponse(array $data): self
+    {
+        $pkg = $data['package'] ?? [];
+
+        return new self(
+            name: $pkg['name'] ?? '',
+            description: $pkg['description'] ?? '',
+            time: $pkg['time'] ?? '',
+            versions: $pkg['versions'] ?? [],
+            type: $pkg['type'] ?? '',
+            repository: $pkg['repository'] ?? '',
+            language: $pkg['language'] ?? '',
+        );
+    }
 }

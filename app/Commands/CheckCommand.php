@@ -48,7 +48,7 @@ class CheckCommand extends Command
         $this->filter = now()->subMonths($months)->day(1)->toDateString();
 
         try {
-            $pkg = new PackagistApiPackagePayload($payload->json());
+            $pkg = PackagistApiPackagePayload::fromResponse($payload->json());
             $this->info('Found the package. Type: ' . $pkg->type);
 
             $versions = collect($pkg->versions ?? [])
