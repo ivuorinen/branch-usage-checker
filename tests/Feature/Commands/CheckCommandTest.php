@@ -132,6 +132,28 @@ test('check command stops when all stats fail', function () {
         ->assertExitCode(0);
 });
 
+test('check command skips branch with malformed stats', function () {
+    fakePackageResponses([
+        'dev-main'    => Http::response(['labels' => ['2024-01', '2024-02', '2024-03'], 'values' => [[1, 2]]]),
+        'dev-feature' => Http::response(statsResponse([10, 20, 30])),
+    ]);
+
+    $this->artisan(TEST_COMMAND)
+        ->expectsOutputToContain('Malformed stats for dev-main')
+        ->assertExitCode(0);
+});
+
+test('check command reports error when a stats request is unexpected', function () {
+    // Metadata resolves, but the per-branch stats requests have no matching fake.
+    // With stray requests prevented, the pool throws and the generic catch reports it.
+    Http::fake([
+        TEST_METADATA_URL => Http::response(validMetadata()),
+    ]);
+
+    $this->artisan(TEST_COMMAND)
+        ->assertExitCode(1);
+});
+
 test('check command lets TypeError propagate from malformed payload', function () {
     Http::fake([
         TEST_METADATA_URL => Http::response([

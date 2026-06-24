@@ -1,5 +1,6 @@
 {
   "chmod": "0755",
+  "dump-autoload": false,
   "directories": [
     "app",
     "bootstrap",
