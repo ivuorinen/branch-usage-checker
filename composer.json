@@ -31,7 +31,7 @@
     "ergebnis/composer-normalize": "^2",
     "laravel-zero/framework": "^12",
     "mockery/mockery": "^1",
-    "pestphp/pest": "^4",
+    "pestphp/pest": "^5",
     "phpmd/phpmd": "^2.15",
     "roave/security-advisories": "dev-latest",
     "squizlabs/php_codesniffer": "^4.0"
