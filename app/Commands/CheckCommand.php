@@ -3,6 +3,7 @@
 namespace App\Commands;
 
 use App\Dto\PackagistApiPackagePayload;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\Pool;
 use LaravelZero\Framework\Commands\Command;
@@ -133,13 +134,18 @@ class CheckCommand extends Command
     /** Fetch package metadata from Packagist. */
     private function fetchPackageMetadata(): ?\Illuminate\Http\Client\Response
     {
-        $payload = $this->http->timeout(self::TIMEOUT_SECONDS)->get(
-            sprintf(
-                self::PACKAGIST_URL . '.json',
-                $this->vendor,
-                $this->package
-            )
-        );
+        try {
+            $payload = $this->http->timeout(self::TIMEOUT_SECONDS)->get(
+                sprintf(
+                    self::PACKAGIST_URL . '.json',
+                    $this->vendor,
+                    $this->package
+                )
+            );
+        } catch (ConnectionException $e) {
+            $this->error("Failed to fetch package metadata: {$e->getMessage()}");
+            return null;
+        }
 
         if ($payload->failed()) {
             if ($payload->status() === 404) {
