@@ -47,10 +47,11 @@ via `bootstrap/app.php`.
 
 ### Core Flow (CheckCommand)
 
-`check {vendor} {package?} {months=9}` — the main
+`check {vendor} {package?} {months?}` — the main
 (and only functional) command. The `vendor` argument
 accepts a combined `vendor/package` form, making
-`package` optional in that case:
+`package` optional in that case; a numeric second
+argument is then read as `months` (default 9):
 
 1. Fetches package metadata from
    `packagist.org/packages/{vendor}/{package}.json`

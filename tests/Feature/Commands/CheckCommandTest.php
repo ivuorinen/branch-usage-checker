@@ -55,6 +55,20 @@ test('check command with slash format', function () {
     ]);
 
     $this->artisan('check ' . TEST_VENDOR . '/' . TEST_PACKAGE)
+        ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
+        ->expectsOutputToContain('Months: 9')
+        ->assertExitCode(0);
+});
+
+test('check command with slash format and months', function () {
+    fakePackageResponses([
+        'dev-feature' => Http::response(statsResponse([1, 2, 3])),
+        'dev-main'    => Http::response(statsResponse([1, 2, 3])),
+    ]);
+
+    $this->artisan('check ' . TEST_VENDOR . '/' . TEST_PACKAGE . ' 3')
+        ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
+        ->expectsOutputToContain('Months: 3')
         ->assertExitCode(0);
 });
 
@@ -65,6 +79,20 @@ test('check command with two arguments', function () {
     ]);
 
     $this->artisan('check ' . TEST_VENDOR . ' ' . TEST_PACKAGE)
+        ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
+        ->expectsOutputToContain('Months: 9')
+        ->assertExitCode(0);
+});
+
+test('check command with two arguments and months', function () {
+    fakePackageResponses([
+        'dev-feature' => Http::response(statsResponse([1, 2, 3])),
+        'dev-main'    => Http::response(statsResponse([1, 2, 3])),
+    ]);
+
+    $this->artisan('check ' . TEST_VENDOR . ' ' . TEST_PACKAGE . ' 3')
+        ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
+        ->expectsOutputToContain('Months: 3')
         ->assertExitCode(0);
 });
 
@@ -75,6 +103,7 @@ test('check command rejects invalid input', function (string $args, string $expe
 })->with([
     'missing package'        => ['check ivuorinen', 'Missing package name'],
     'conflicting arguments'  => ['check ivuorinen/branch-usage-checker extra', 'Conflicting arguments'],
+    'months given twice'     => ['check ivuorinen/branch-usage-checker 3 6', 'Conflicting arguments'],
     'invalid vendor'         => ['check INVALID!/package-name', 'Invalid vendor name'],
     'invalid package'        => ['check valid-vendor INVALID!', 'Invalid package name'],
 ]);
