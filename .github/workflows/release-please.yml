@@ -48,11 +48,13 @@ jobs:
       # Through the environment, never interpolated into `run:`.
       TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
     steps:
-      # No `ref:`: a release is created on the push that merges the release
-      # PR, so the push event's own commit is the tagged commit.
+      # Build from the tag, not the push commit: release-please tags a merged
+      # release PR on whichever run first succeeds, so a release created on a
+      # later push points at an older commit than github.sha.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: refs/tags/${{ env.TAG_NAME }}
           fetch-depth: 0
           persist-credentials: false
 
