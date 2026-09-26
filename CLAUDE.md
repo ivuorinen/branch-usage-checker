@@ -94,6 +94,9 @@ version comes from the git tag, not from a file.
 Config: `.release-please-config.json`, current
 version: `.release-please-manifest.json`.
 `chore` commits are hidden and never cut a release.
+If a release exists without its PHAR, rerun the
+publish step: `gh workflow run release-please.yml
+-f tag=<version>`.
 
 Renovate (`.github/renovate.json`): runtime
 dependencies (`require`) commit as `fix(deps)` and
