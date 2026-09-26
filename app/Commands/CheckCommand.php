@@ -13,15 +13,17 @@ class CheckCommand extends Command
     protected $signature = 'check
         {vendor : Package vendor or vendor/package}
         {package? : Package name}
-        {months=9 : How many months should we return for review (optional)}
+        {months? : How many months should we return for review (default: 9)}
         ';
     protected $description = 'Check package branch usage';
 
     private string $vendor = '';
     private string $package = '';
+    private int $months = self::DEFAULT_MONTHS;
     private string $filter = '';
     private int $totalBranches = 0;
 
+    private const DEFAULT_MONTHS = 9;
     private const NAME_PATTERN = '/^[a-z0-9]([_.\-]?[a-z0-9]+)*$/';
     private const TIMEOUT_SECONDS = 10;
     private const PACKAGIST_URL = 'https://packagist.org/packages/%s/%s';
@@ -37,16 +39,14 @@ class CheckCommand extends Command
             return 1;
         }
 
-        $months = (int) $this->argument('months');
-
         $this->info(sprintf('Checking: %s/%s', $this->vendor, $this->package));
-        $this->info('Months: ' . $months);
+        $this->info('Months: ' . $this->months);
 
         $payload = $this->fetchPackageMetadata();
         if ($payload === null) {
             return 1;
         }
-        $this->filter = now()->subMonths($months)->day(1)->toDateString();
+        $this->filter = now()->subMonths($this->months)->day(1)->toDateString();
 
         try {
             $pkg = PackagistApiPackagePayload::fromResponse($payload->json());
@@ -96,8 +96,13 @@ class CheckCommand extends Command
     {
         $vendor  = strtolower((string) $this->argument('vendor'));
         $package = $this->argument('package');
+        $months  = $this->argument('months');
 
         if (str_contains($vendor, '/')) {
+            // In vendor/package form, a numeric second argument is the months value.
+            if ($months === null && ctype_digit((string) $package)) {
+                [$months, $package] = [$package, null];
+            }
             if ($package !== null) {
                 $this->error(
                     'Conflicting arguments: vendor/package format'
@@ -127,6 +132,7 @@ class CheckCommand extends Command
 
         $this->vendor  = $vendor;
         $this->package = $package;
+        $this->months  = (int) ($months ?? self::DEFAULT_MONTHS);
 
         return true;
     }

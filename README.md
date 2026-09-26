@@ -35,12 +35,15 @@ chmod +x branch-usage-checker
 
 ```text
 branch-usage-checker check <vendor/package> [months]
+branch-usage-checker check <vendor> <package> [months]
 ```
 
-| Argument         | Description            | Default |
-|------------------|------------------------|---------|
-| `vendor/package` | Packagist package name |         |
-| `months`         | Months to look back    | `9`     |
+| Argument         | Description                           | Default |
+|------------------|---------------------------------------|---------|
+| `vendor/package` | Packagist package name                |         |
+| `vendor`         | Package vendor, when given separately |         |
+| `package`        | Package name, when given separately   |         |
+| `months`         | Months to look back                   | `9`     |
 
 ### Example
 

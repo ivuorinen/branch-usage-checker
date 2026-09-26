@@ -48,25 +48,22 @@ function fakePackageResponses(array $statsPerBranch = []): void
     Http::fake($fakes);
 }
 
-test('check command with slash format', function () {
+test('check command accepts valid input', function (string $args, int $months) {
     fakePackageResponses([
         'dev-feature' => Http::response(statsResponse([1, 2, 3])),
         'dev-main'    => Http::response(statsResponse([1, 2, 3])),
     ]);
 
-    $this->artisan('check ' . TEST_VENDOR . '/' . TEST_PACKAGE)
+    $this->artisan('check ' . $args)
+        ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
+        ->expectsOutputToContain('Months: ' . $months)
         ->assertExitCode(0);
-});
-
-test('check command with two arguments', function () {
-    fakePackageResponses([
-        'dev-feature' => Http::response(statsResponse([1, 2, 3])),
-        'dev-main'    => Http::response(statsResponse([1, 2, 3])),
-    ]);
-
-    $this->artisan('check ' . TEST_VENDOR . ' ' . TEST_PACKAGE)
-        ->assertExitCode(0);
-});
+})->with([
+    'slash format'              => [TEST_VENDOR . '/' . TEST_PACKAGE, 9],
+    'slash format and months'   => [TEST_VENDOR . '/' . TEST_PACKAGE . ' 3', 3],
+    'two arguments'             => [TEST_VENDOR . ' ' . TEST_PACKAGE, 9],
+    'two arguments and months'  => [TEST_VENDOR . ' ' . TEST_PACKAGE . ' 3', 3],
+]);
 
 test('check command rejects invalid input', function (string $args, string $expected) {
     $this->artisan($args)
@@ -75,6 +72,7 @@ test('check command rejects invalid input', function (string $args, string $expe
 })->with([
     'missing package'        => ['check ivuorinen', 'Missing package name'],
     'conflicting arguments'  => ['check ivuorinen/branch-usage-checker extra', 'Conflicting arguments'],
+    'months given twice'     => ['check ivuorinen/branch-usage-checker 3 6', 'Conflicting arguments'],
     'invalid vendor'         => ['check INVALID!/package-name', 'Invalid vendor name'],
     'invalid package'        => ['check valid-vendor INVALID!', 'Invalid package name'],
 ]);
