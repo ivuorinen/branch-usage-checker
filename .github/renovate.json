@@ -2,5 +2,94 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>ivuorinen/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "description": [
+        "Runtime dependencies ship inside the PHAR, so an update is a user-visible ",
+        "fix: 'fix(deps)' makes release-please cut a patch release. Composer's ",
+        "dependency types are 'require' and 'require-dev'; the preset's ",
+        "'devDependencies' group matches npm only."
+      ],
+      "matchManagers": [
+        "composer"
+      ],
+      "matchDepTypes": [
+        "require"
+      ],
+      "semanticCommitScope": "deps",
+      "semanticCommitType": "fix"
+    },
+    {
+      "description": [
+        "Never mark a runtime dependency major as breaking. The preset's major rule ",
+        "sets 'chore(deps)!: ', and the '!' makes release-please cut a breaking ",
+        "release, but the CLI's arguments and output do not change when a bundled ",
+        "library does. Must stay after the preset: later matching rules win."
+      ],
+      "commitMessagePrefix": "fix(deps): ",
+      "matchManagers": [
+        "composer"
+      ],
+      "matchDepTypes": [
+        "require"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ]
+    },
+    {
+      "groupName": "dependencies (non-major)",
+      "matchManagers": [
+        "composer"
+      ],
+      "matchDepTypes": [
+        "require"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
+    },
+    {
+      "description": [
+        "Development dependencies never reach the PHAR: 'chore(dev-deps)' keeps ",
+        "them out of the changelog and the version bump."
+      ],
+      "matchManagers": [
+        "composer"
+      ],
+      "matchDepTypes": [
+        "require-dev"
+      ],
+      "semanticCommitScope": "dev-deps",
+      "semanticCommitType": "chore"
+    },
+    {
+      "groupName": "dev dependencies (non-major)",
+      "matchManagers": [
+        "composer"
+      ],
+      "matchDepTypes": [
+        "require-dev"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
+    },
+    {
+      "description": "Never propose major versions of development dependencies.",
+      "enabled": false,
+      "matchManagers": [
+        "composer"
+      ],
+      "matchDepTypes": [
+        "require-dev"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ]
+    }
   ]
 }
