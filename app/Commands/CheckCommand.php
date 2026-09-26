@@ -99,11 +99,18 @@ class CheckCommand extends Command
         $months  = $this->argument('months');
 
         if (str_contains($vendor, '/')) {
-            $split = $this->splitSlashFormat($vendor, $package, $months);
-            if ($split === null) {
+            // In vendor/package form, a numeric second argument is the months value.
+            if ($months === null && ctype_digit((string) $package)) {
+                [$months, $package] = [$package, null];
+            }
+            if ($package !== null) {
+                $this->error(
+                    'Conflicting arguments: vendor/package format'
+                    . ' and separate package argument cannot be used together.'
+                );
                 return false;
             }
-            [$vendor, $package, $months] = $split;
+            [$vendor, $package] = explode('/', $vendor, 2);
         }
 
         if ($package === null || $package === '') {
@@ -125,33 +132,9 @@ class CheckCommand extends Command
 
         $this->vendor  = $vendor;
         $this->package = $package;
-        $this->months  = $months === null ? self::DEFAULT_MONTHS : (int) $months;
+        $this->months  = (int) ($months ?? self::DEFAULT_MONTHS);
 
         return true;
-    }
-
-    /**
-     * Split a vendor/package argument into [vendor, package, months].
-     * A numeric second argument is read as the months value.
-     * Returns null when a separate package argument is also given.
-     */
-    private function splitSlashFormat(string $vendor, ?string $package, ?string $months): ?array
-    {
-        if ($package !== null && $months === null && ctype_digit($package)) {
-            [$months, $package] = [$package, null];
-        }
-
-        if ($package !== null) {
-            $this->error(
-                'Conflicting arguments: vendor/package format'
-                . ' and separate package argument cannot be used together.'
-            );
-            return null;
-        }
-
-        [$vendor, $package] = explode('/', $vendor, 2);
-
-        return [$vendor, $package, $months];
     }
 
     /** Fetch package metadata from Packagist. */
