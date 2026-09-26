@@ -143,14 +143,30 @@ test('check command skips branch with malformed stats', function () {
         ->assertExitCode(0);
 });
 
-test('check command reports error when a stats request is unexpected', function () {
+test('check command skips branches when stats requests are unexpected', function () {
     // Metadata resolves, but the per-branch stats requests have no matching fake.
-    // With stray requests prevented, the pool throws and the generic catch reports it.
+    // The pool returns each rejected request as a Throwable instead of throwing.
     Http::fake([
         TEST_METADATA_URL => Http::response(validMetadata()),
     ]);
 
     $this->artisan(TEST_COMMAND)
+        ->expectsOutputToContain('Failed to fetch stats for dev-feature, skipping.')
+        ->expectsOutputToContain('Failed to fetch stats for dev-main, skipping.')
+        ->expectsOutputToContain('No statistics found... Stopping.')
+        ->assertExitCode(0);
+});
+
+test('check command reports error when stats contain non-numeric values', function () {
+    // array_sum() warns on non-numeric values; the error handler turns that into
+    // an ErrorException, which the generic catch reports.
+    fakePackageResponses([
+        'dev-main'    => Http::response(['labels' => ['2024-01'], 'values' => [['x']]]),
+        'dev-feature' => Http::response(statsResponse([10, 20, 30])),
+    ]);
+
+    $this->artisan(TEST_COMMAND)
+        ->expectsOutputToContain('Addition is not supported on type string')
         ->assertExitCode(1);
 });
 
