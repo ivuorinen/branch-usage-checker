@@ -80,3 +80,14 @@ argument is then read as `months` (default 9):
 - DTOs use `spatie/data-transfer-object` with
   `MapFrom` attributes for JSON field mapping
 - PHAR building configured in `box.json`
+
+### Releases
+
+release-please (`.github/workflows/release-please.yml`)
+keeps a release PR open on `master`; merging it tags
+the release (no `v` prefix), updates `CHANGELOG.md`,
+and publishes the PHAR as a release asset. The app
+version comes from the git tag, not from a file.
+Config: `.release-please-config.json`, current
+version: `.release-please-manifest.json`.
+`chore` commits are hidden and never cut a release.
