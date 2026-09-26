@@ -170,6 +170,16 @@ test('check command reports error when stats contain non-numeric values', functi
         ->assertExitCode(1);
 });
 
+test('check command reports error when metadata request fails to connect', function () {
+    Http::fake([
+        TEST_METADATA_URL => Http::failedConnection('Connection refused'),
+    ]);
+
+    $this->artisan(TEST_COMMAND)
+        ->expectsOutputToContain('Failed to fetch package metadata: Connection refused')
+        ->assertExitCode(1);
+});
+
 test('check command lets TypeError propagate from malformed payload', function () {
     Http::fake([
         TEST_METADATA_URL => Http::response([
