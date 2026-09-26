@@ -48,53 +48,22 @@ function fakePackageResponses(array $statsPerBranch = []): void
     Http::fake($fakes);
 }
 
-test('check command with slash format', function () {
+test('check command accepts valid input', function (string $args, int $months) {
     fakePackageResponses([
         'dev-feature' => Http::response(statsResponse([1, 2, 3])),
         'dev-main'    => Http::response(statsResponse([1, 2, 3])),
     ]);
 
-    $this->artisan('check ' . TEST_VENDOR . '/' . TEST_PACKAGE)
+    $this->artisan('check ' . $args)
         ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
-        ->expectsOutputToContain('Months: 9')
+        ->expectsOutputToContain('Months: ' . $months)
         ->assertExitCode(0);
-});
-
-test('check command with slash format and months', function () {
-    fakePackageResponses([
-        'dev-feature' => Http::response(statsResponse([1, 2, 3])),
-        'dev-main'    => Http::response(statsResponse([1, 2, 3])),
-    ]);
-
-    $this->artisan('check ' . TEST_VENDOR . '/' . TEST_PACKAGE . ' 3')
-        ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
-        ->expectsOutputToContain('Months: 3')
-        ->assertExitCode(0);
-});
-
-test('check command with two arguments', function () {
-    fakePackageResponses([
-        'dev-feature' => Http::response(statsResponse([1, 2, 3])),
-        'dev-main'    => Http::response(statsResponse([1, 2, 3])),
-    ]);
-
-    $this->artisan('check ' . TEST_VENDOR . ' ' . TEST_PACKAGE)
-        ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
-        ->expectsOutputToContain('Months: 9')
-        ->assertExitCode(0);
-});
-
-test('check command with two arguments and months', function () {
-    fakePackageResponses([
-        'dev-feature' => Http::response(statsResponse([1, 2, 3])),
-        'dev-main'    => Http::response(statsResponse([1, 2, 3])),
-    ]);
-
-    $this->artisan('check ' . TEST_VENDOR . ' ' . TEST_PACKAGE . ' 3')
-        ->expectsOutputToContain('Checking: ' . TEST_VENDOR . '/' . TEST_PACKAGE)
-        ->expectsOutputToContain('Months: 3')
-        ->assertExitCode(0);
-});
+})->with([
+    'slash format'              => [TEST_VENDOR . '/' . TEST_PACKAGE, 9],
+    'slash format and months'   => [TEST_VENDOR . '/' . TEST_PACKAGE . ' 3', 3],
+    'two arguments'             => [TEST_VENDOR . ' ' . TEST_PACKAGE, 9],
+    'two arguments and months'  => [TEST_VENDOR . ' ' . TEST_PACKAGE . ' 3', 3],
+]);
 
 test('check command rejects invalid input', function (string $args, string $expected) {
     $this->artisan($args)
