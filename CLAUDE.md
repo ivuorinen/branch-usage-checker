@@ -36,6 +36,9 @@ application.
 - PHP 8.4 required
 - Composer normalize runs automatically on
   autoload dump
+- Conventional Commits: PRs are squash-merged and
+  release-please reads the PR title, so titles must
+  be conventional (checked by `pr-title.yml`)
 - CaptainHook pre-commit hook runs PHPCBF
   then PHPCS on staged PHP files automatically
 
