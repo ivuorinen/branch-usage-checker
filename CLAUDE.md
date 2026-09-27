@@ -36,6 +36,9 @@ application.
 - PHP 8.4 required
 - Composer normalize runs automatically on
   autoload dump
+- Conventional Commits: PRs are squash-merged and
+  release-please reads the PR title, so titles must
+  be conventional (checked by `pr-title.yml`)
 - CaptainHook pre-commit hook runs PHPCBF
   then PHPCS on staged PHP files automatically
 
@@ -80,3 +83,23 @@ argument is then read as `months` (default 9):
 - DTOs use `spatie/data-transfer-object` with
   `MapFrom` attributes for JSON field mapping
 - PHAR building configured in `box.json`
+
+### Releases
+
+release-please (`.github/workflows/release-please.yml`)
+keeps a release PR open on `master`; merging it tags
+the release (no `v` prefix), updates `CHANGELOG.md`,
+and publishes the PHAR as a release asset. The app
+version comes from the git tag, not from a file.
+Config: `.release-please-config.json`, current
+version: `.release-please-manifest.json`.
+`chore` commits are hidden and never cut a release.
+If a release exists without its PHAR, rerun the
+publish step with that release's tag, for example
+`gh workflow run release-please.yml -f tag=0.2.0`.
+
+Renovate (`.github/renovate.json`): runtime
+dependencies (`require`) commit as `fix(deps)` and
+trigger a patch release; dev dependencies
+(`require-dev`) commit as `chore(dev-deps)` and
+never get major-version updates.

@@ -28,7 +28,7 @@ Download the latest `branch-usage-checker` PHAR from
 
 ```bash
 chmod +x branch-usage-checker
-./branch-usage-checker check <vendor/package>
+./branch-usage-checker check ivuorinen/branch-usage-checker
 ```
 
 ## Usage
